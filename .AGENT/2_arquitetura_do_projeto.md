@@ -1,1 +1,0 @@
-O projeto é um Sistema de Processamento de Pedidos. Componentes: 1) Checkout API (.NET Web API). 2) Message Broker (RabbitMQ local, migrando para AWS SQS/Kafka futuramente). 3) Payment Worker (.NET Worker Service). Toda a infraestrutura será na AWS (VPC, ECS Fargate, ECR) provisionada estritamente via Terraform. Observabilidade será feita com OpenTelemetry.

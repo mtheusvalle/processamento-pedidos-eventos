@@ -22,3 +22,4 @@ build_output.txt
 # Outros
 .DS_Store
 *.swp
+.AGENT/
