@@ -1,5 +1,6 @@
 using Checkout.Domain.Interfaces;
 using Checkout.Infrastructure.Services;
+using Checkout.Infrastructure.Consumers;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,10 @@ public static class DependencyInjection
         // Toda a sugeira do MassTransit fica isolada aqui!
         services.AddMassTransit(x =>
         {
+            x.AddConsumer<PagamentoAprovadoEventConsumer>();
+            x.AddConsumer<PagamentoRecusadoEventConsumer>();
+            x.AddConsumer<EstoqueRecusadoEventConsumer>();
+
             x.UsingRabbitMq((context, cfg) =>
             {
                 var hostName = configuration["RabbitMQ:HostName"] ?? "localhost";

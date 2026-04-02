@@ -11,6 +11,9 @@
     <Project Path="Services/Checkout/Checkout.Infrastructure/Checkout.Infrastructure.csproj" />
     <Project Path="Services/Checkout/Checkout.UnitTests/Checkout.UnitTests.csproj" />
   </Folder>
+  <Folder Name="/Services/Inventory/">
+    <Project Path="Services/Inventory/Inventory.Worker/Inventory.Worker.csproj" />
+  </Folder>
   <Folder Name="/Services/Payment/">
     <Project Path="Services/Payment/Payment.Application/Payment.Application.csproj" />
     <Project Path="Services/Payment/Payment.Data/Payment.Data.csproj" />

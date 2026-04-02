@@ -9,6 +9,8 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IProcessarPagamentoUseCase, ProcessarPagamentoUseCase>();
+        services.AddScoped<IEstornarPagamentoUseCase, EstornarPagamentoUseCase>();
+
         return services;
     }
 }

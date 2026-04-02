@@ -9,6 +9,7 @@ public static class DependencyInjection
     {
         // Registra todos os Casos de Uso
         services.AddScoped<ICriarPedidoUseCase, CriarPedidoUseCase>();
+        services.AddScoped<IAtualizarStatusPedidoUseCase, AtualizarStatusPedidoUseCase>();
         
         return services;
     }
