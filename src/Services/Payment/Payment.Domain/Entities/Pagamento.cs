@@ -33,4 +33,13 @@ public class Pagamento
         Status = StatusPagamento.Recusado;
         DataProcessamento = DateTime.UtcNow;
     }
+
+    public void Estornar()
+    {
+        if (Status != StatusPagamento.Aprovado)
+            throw new InvalidOperationException("Apenas pagamentos aprovados podem ser estornados.");
+
+        Status = StatusPagamento.Estornado;
+        DataProcessamento = DateTime.UtcNow;
+    }
 }
