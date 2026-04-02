@@ -1,0 +1,95 @@
+name: CI/CD Pipeline & Auto PR
+
+on:
+  push:
+    branches:
+      - '**' # Dispara em qualquer branch
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build-and-test:
+    name: Build & Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Código Fonte
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x' # Versão baseada no projeto
+
+      - name: Restore dependencies
+        run: dotnet restore src/ProcessamentoPedidos.slnx
+
+      - name: Build Solution
+        run: dotnet build src/ProcessamentoPedidos.slnx --no-restore --configuration Release
+
+      - name: Run Unit Tests
+        run: dotnet test src/ProcessamentoPedidos.slnx --no-build --configuration Release --verbosity normal
+
+  auto-pr:
+    name: Criador Automático de PRs
+    needs: build-and-test # Só executa se o Build e os Testes passarem
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Código Fonte
+        uses: actions/checkout@v4
+
+      - name: Abrir PR (Feature/Fix -> Develop)
+        # Se a branch começar com feature/, fix/ ou chore/, ela tentará criar um PR pra develop
+        if: startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/fix/') || startsWith(github.ref, 'refs/heads/chore/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base develop \
+            --head ${{ github.ref_name }} \
+            --title "🚀 Nova Funcionalidade/Correção: ${{ github.ref_name }}" \
+            --body "Pull Request gerado automaticamente pelo bot do GitHub Actions após passar nos testes unitários." \
+            || echo "O PR já existe ou não há commits novos."
+
+      - name: Abrir PR (Develop -> Main)
+        # Se um código novo entrou na develop (por merge direto ou commit direto), a gente prepara a main (release)
+        if: github.ref == 'refs/heads/develop'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base main \
+            --head develop \
+            --title "📦 Release: Atualização da Develop para Main" \
+            --body "Sincronização automática para manter a Main atualizada." \
+            || echo "O PR já existe ou não há commits novos."
+
+  notify:
+    name: Notificação no Discord
+    needs: [build-and-test, auto-pr]
+    if: always() # Vai rodar mesmo se os passos acima falharem
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Enviar Webhook pro Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          STATUS: ${{ needs.build-and-test.result }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "URL do Discord não configurada nos Secrets"
+            exit 0
+          fi
+          
+          # Verde se for success, Vermelho se der pau
+          COLOR="65280"
+          if [ "$STATUS" != "success" ]; then
+            COLOR="16711680"
+          fi
+          
+          curl -H "Content-Type: application/json" \
+               -d "{\"embeds\": [{\"title\": \"🤖 Pipeline: ${{ github.repository }}\", \"description\": \"Branch atualizada: **${{ github.ref_name }}**\nStatus dos Testes: **$STATUS**\n[Ver Detalhes do Job](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\", \"color\": $COLOR}]}" \
+               $DISCORD_WEBHOOK
