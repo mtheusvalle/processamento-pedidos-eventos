@@ -1,11 +1,13 @@
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
+using MassTransit;
 using NSubstitute;
 using Payment.Application.UseCases;
 using Payment.Domain.Entities;
 using Payment.Domain.Enums;
 using Payment.Domain.Interfaces;
+using ProcessamentoPedidos.Core.Events;
 using Xunit;
 
 namespace Payment.UnitTests.Application.UseCases;
@@ -13,12 +15,14 @@ namespace Payment.UnitTests.Application.UseCases;
 public class ProcessarPagamentoUseCaseTests
 {
     private readonly IPagamentoRepository _pagamentoRepositoryMock;
+    private readonly IPublishEndpoint _publishEndpointMock;
     private readonly ProcessarPagamentoUseCase _sut;
 
     public ProcessarPagamentoUseCaseTests()
     {
         _pagamentoRepositoryMock = Substitute.For<IPagamentoRepository>();
-        _sut = new ProcessarPagamentoUseCase(_pagamentoRepositoryMock);
+        _publishEndpointMock = Substitute.For<IPublishEndpoint>();
+        _sut = new ProcessarPagamentoUseCase(_pagamentoRepositoryMock, _publishEndpointMock);
     }
 
     [Fact]

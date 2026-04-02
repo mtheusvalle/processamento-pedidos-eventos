@@ -1,7 +1,9 @@
+using System;
 using Checkout.Domain.Entities;
 using Checkout.Domain.Interfaces;
 using Checkout.Data.Context;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace Checkout.Data.Repositories;
 
@@ -17,6 +19,11 @@ public class PedidoRepository : IPedidoRepository
     public PedidoRepository(AppDbContext context)
     {
         _context = context;
+    }
+
+    public async Task<Pedido> GetByIdAsync(Guid id)
+    {
+        return await _context.Pedidos.FirstOrDefaultAsync(p => p.Id == id);
     }
 
     public async Task AddAsync(Pedido pedido)
