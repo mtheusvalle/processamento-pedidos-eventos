@@ -52,6 +52,7 @@ jobs:
             --head ${{ github.ref_name }} \
             --title "🚀 Nova Funcionalidade/Correção: ${{ github.ref_name }}" \
             --body "Pull Request gerado automaticamente pelo bot do GitHub Actions após passar nos testes unitários." \
+            --reviewer mtheusvalle \
             || echo "O PR já existe ou não há commits novos."
 
       - name: Abrir PR (Develop -> Main)
@@ -65,6 +66,7 @@ jobs:
             --head develop \
             --title "📦 Release: Atualização da Develop para Main" \
             --body "Sincronização automática para manter a Main atualizada." \
+            --reviewer mtheusvalle \
             || echo "O PR já existe ou não há commits novos."
 
   notify:
