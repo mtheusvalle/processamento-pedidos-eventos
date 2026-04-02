@@ -10,6 +10,23 @@ permissions:
   pull-requests: write
 
 jobs:
+  notify-start:
+    name: Notificação de Início (Discord)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enviar Webhook pro Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "URL do Discord não configurada nos Secrets"
+            exit 0
+          fi
+          
+          curl -H "Content-Type: application/json" \
+               -d "{\"embeds\": [{\"title\": \"⏳ Pipeline Iniciada: ${{ github.repository }}\", \"description\": \"Alguém fez um push na branch: **${{ github.ref_name }}**\nO processo de Build e Testes começou e o GitHub Actions está rodando! 🚀\n[Acompanhar ao Vivo](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\", \"color\": 16753920}]}" \
+               $DISCORD_WEBHOOK
+
   build-and-test:
     name: Build & Tests
     runs-on: ubuntu-latest
