@@ -1,3 +1,4 @@
+using System;
 using Checkout.Domain.Entities;
 using System.Threading.Tasks;
 
@@ -9,6 +10,7 @@ namespace Checkout.Domain.Interfaces;
 /// </summary>
 public interface IPedidoRepository
 {
+    Task<Pedido> GetByIdAsync(Guid id);
     Task AddAsync(Pedido pedido);
     Task CommitAsync();
 }

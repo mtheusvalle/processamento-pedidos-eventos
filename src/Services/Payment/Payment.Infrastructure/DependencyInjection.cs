@@ -13,6 +13,7 @@ public static class DependencyInjection
         {
             // Registra os consumidores que moram nesta assembly
             x.AddConsumer<PedidoCriadoEventConsumer>();
+            x.AddConsumer<EstoqueRecusadoEventConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -28,9 +29,14 @@ public static class DependencyInjection
 
                 // Aqui é o Pulo do Gato para Consumers:
                 // Dizemos ao RabbitMQ para criar uma fila "pedido-criado-queue" e atrelar ao nosso Consumer
-                cfg.ReceiveEndpoint("pedido-criado-queue", e =>
+                cfg.ReceiveEndpoint("payment-pedido-criado-queue", e =>
                 {
                     e.ConfigureConsumer<PedidoCriadoEventConsumer>(context);
+                });
+
+                cfg.ReceiveEndpoint("payment-estoque-recusado-queue", e =>
+                {
+                    e.ConfigureConsumer<EstoqueRecusadoEventConsumer>(context);
                 });
             });
         });
