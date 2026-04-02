@@ -4,14 +4,38 @@ on:
   push:
     branches:
       - '**' # Dispara em qualquer branch
+  pull_request:
+    types: [opened]
 
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
+  notify-pr:
+    name: Notificação de PR Aberto (Discord)
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enviar Webhook pro Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "URL do Discord não configurada nos Secrets"
+            exit 0
+          fi
+          
+          curl -H "Content-Type: application/json" \
+               -d "{\"embeds\": [{\"title\": \"🔀 Novo Pull Request Aberto!\", \"description\": \"**$PR_AUTHOR** abriu o PR: **$PR_TITLE**\n\n🔗 **[Clique aqui para revisar o PR]($PR_URL)**\", \"color\": 3447003}]}" \
+               $DISCORD_WEBHOOK
+
   notify-start:
     name: Notificação de Início (Discord)
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Enviar Webhook pro Discord
@@ -52,6 +76,7 @@ jobs:
   auto-pr:
     name: Criador Automático de PRs
     needs: build-and-test # Só executa se o Build e os Testes passarem
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
@@ -63,28 +88,48 @@ jobs:
         if: startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/fix/') || startsWith(github.ref, 'refs/heads/chore/')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          gh pr create \
+          if PR_URL=$(gh pr create \
             --base develop \
             --head ${{ github.ref_name }} \
             --title "🚀 Nova Funcionalidade/Correção: ${{ github.ref_name }}" \
             --body "Pull Request gerado automaticamente pelo bot do GitHub Actions após passar nos testes unitários." \
-            --reviewer mtheusvalle \
-            || echo "O PR já existe ou não há commits novos."
+            --reviewer mtheusvalle); then
+            
+            echo "PR Criado: $PR_URL"
+            if [ -n "$DISCORD_WEBHOOK" ]; then
+              curl -H "Content-Type: application/json" \
+                   -d "{\"embeds\": [{\"title\": \"🔀 Novo Pull Request Criado!\", \"description\": \"Um código novo quer entrar na **develop**!\\n\\n🔗 **[Clique aqui para revisar e aprovar o PR]($PR_URL)**\", \"color\": 3447003}]}" \
+                   $DISCORD_WEBHOOK
+            fi
+          else
+            echo "O PR já existe ou não há commits novos."
+          fi
 
       - name: Abrir PR (Develop -> Main)
         # Se um código novo entrou na develop (por merge direto ou commit direto), a gente prepara a main (release)
         if: github.ref == 'refs/heads/develop'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          gh pr create \
+          if PR_URL=$(gh pr create \
             --base main \
             --head develop \
             --title "📦 Release: Atualização da Develop para Main" \
             --body "Sincronização automática para manter a Main atualizada." \
-            --reviewer mtheusvalle \
-            || echo "O PR já existe ou não há commits novos."
+            --reviewer mtheusvalle); then
+            
+            echo "PR Criado: $PR_URL"
+            if [ -n "$DISCORD_WEBHOOK" ]; then
+              curl -H "Content-Type: application/json" \
+                   -d "{\"embeds\": [{\"title\": \"📦 PR de Release Criado!\", \"description\": \"A branch **develop** está pronta para ir para **main**!\\n\\n🔗 **[Clique aqui para revisar e aprovar a Release]($PR_URL)**\", \"color\": 3447003}]}" \
+                   $DISCORD_WEBHOOK
+            fi
+          else
+            echo "O PR já existe ou não há commits novos."
+          fi
 
   notify:
     name: Notificação no Discord
@@ -110,5 +155,5 @@ jobs:
           fi
           
           curl -H "Content-Type: application/json" \
-               -d "{\"embeds\": [{\"title\": \"🤖 Pipeline: ${{ github.repository }}\", \"description\": \"Branch atualizada: **${{ github.ref_name }}**\nStatus dos Testes: **$STATUS**\n[Ver Detalhes do Job](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\", \"color\": $COLOR}]}" \
+               -d "{\"embeds\": [{\"title\": \"🤖 Pipeline: ${{ github.repository }}\", \"description\": \"Status dos Testes: **$STATUS**\n[Ver Detalhes do Job](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\", \"color\": $COLOR}]}" \
                $DISCORD_WEBHOOK
