@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/BuildingBlocks/">
+    <Project Path="BuildingBlocks/ProcessamentoPedidos.Core/ProcessamentoPedidos.Core.csproj" />
+  </Folder>
+  <Folder Name="/Services/" />
+  <Folder Name="/Services/Checkout/">
+    <Project Path="Services/Checkout/Checkout.API/Checkout.API.csproj" />
+    <Project Path="Services/Checkout/Checkout.Application/Checkout.Application.csproj" />
+    <Project Path="Services/Checkout/Checkout.Data/Checkout.Data.csproj" />
+    <Project Path="Services/Checkout/Checkout.Domain/Checkout.Domain.csproj" />
+    <Project Path="Services/Checkout/Checkout.Infrastructure/Checkout.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Services/Payment/">
+    <Project Path="Services/Payment/Payment.Application/Payment.Application.csproj" />
+    <Project Path="Services/Payment/Payment.Data/Payment.Data.csproj" />
+    <Project Path="Services/Payment/Payment.Domain/Payment.Domain.csproj" />
+    <Project Path="Services/Payment/Payment.Infrastructure/Payment.Infrastructure.csproj" />
+    <Project Path="Services/Payment/Payment.Worker/Payment.Worker.csproj" />
+  </Folder>
+</Solution>

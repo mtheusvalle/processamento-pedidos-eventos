@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-broker
+    hostname: rabbitmq
+    ports:
+      # Porta do protocolo AMQP (usada pela sua aplicação .NET para enviar/receber mensagens)
+      - "5672:5672"
+      # Porta da interface web de gerenciamento (Management UI)
+      - "15672:15672"
+    environment:
+      # Credenciais padrão para acessar tanto a API quanto o Management UI
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      # Volume nomeado para garantir que mensagens e filas não sejam perdidas se o container morrer
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - pedidos_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=checkout_user
+      - POSTGRES_PASSWORD=checkout_pass
+      - POSTGRES_DB=checkout_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pedidos_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U checkout_user -d checkout_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-payment:
+    image: postgres:15-alpine
+    container_name: postgres-payment-db
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=payment_user
+      - POSTGRES_PASSWORD=payment_pass
+      - POSTGRES_DB=payment_db
+    volumes:
+      - postgres_payment_data:/var/lib/postgresql/data
+    networks:
+      - pedidos_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payment_user -d payment_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  checkout-api:
+    build:
+      context: ./src
+      dockerfile: Services/Checkout/Checkout.API/Dockerfile
+    container_name: checkout-api
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=guest
+      - RabbitMQ__Password=guest
+      - ConnectionStrings__CheckoutDb=Host=postgres;Database=checkout_db;Username=checkout_user;Password=checkout_pass
+    networks:
+      - pedidos_network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  payment-worker:
+    build:
+      context: ./src
+      dockerfile: Services/Payment/Payment.Worker/Dockerfile
+    container_name: payment-worker
+    environment:
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=guest
+      - RabbitMQ__Password=guest
+      - ConnectionStrings__PaymentDb=Host=postgres-payment;Database=payment_db;Username=payment_user;Password=payment_pass
+    networks:
+      - pedidos_network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres-payment:
+        condition: service_healthy
+
+volumes:
+  rabbitmq_data:
+  postgres_data:
+  postgres_payment_data:
+
+networks:
+  pedidos_network:
+    driver: bridge

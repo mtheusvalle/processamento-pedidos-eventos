@@ -1,0 +1,24 @@
+# .NET / C#
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Logs e outputs locais
+*.log
+build_error.log
+build_out.txt
+build_output.txt
+
+# Environment
+.env
+
+# Terraform (se houver infra gerada local)
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Outros
+.DS_Store
+*.swp
